@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+project_name: gobase
+builds:
+  - id: default
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    main: ./cmd/gobase
+    binary: gobase
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    hooks:
+      post:
+        - go run -tags man -ldflags "-X=main.version={{.Version}} -X=main.commit={{.ShortCommit}} -X=main.date={{.Date}}" ./cmd/gobase man
+nfpms:
+  - builds:
+      - default
+    maintainer: kyoh86 <me@kyoh86.dev>
+    homepage: https://github.com/kyoh86/gobase
+    description: ""
+    license: MIT
+    formats:
+      - apk
+      - deb
+      - rpm
+archives:
+  - id: gzip
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - licence*
+      - LICENCE*
+      - license*
+      - LICENSE*
+      - readme*
+      - README*
+      - changelog*
+      - CHANGELOG*
+      - gobase*.1

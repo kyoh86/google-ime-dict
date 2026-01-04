@@ -1,0 +1,15 @@
+#!/bin/bash
+# A script to change a name of the app from `gobase`.
+
+NEWNAME=$1
+
+if [ -z "${NEWNAME}" ]; then
+  echo "Usage: _CHANGE_NAME <NEW NAME>" >&2
+  exit 1
+fi
+
+set -ex
+grep --binary-files=without-match --exclude-dir='.git' -rlFe 'gobase' | xargs sed -i -e "s/gobase/${NEWNAME}/g"
+git mv ./cmd/gobase "./cmd/${NEWNAME}"
+
+echo "DONE"
