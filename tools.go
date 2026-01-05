@@ -1,6 +1,6 @@
 //+build tools
 
-package gobase
+package gimedic
 
 import (
 	_ "github.com/goreleaser/goreleaser"

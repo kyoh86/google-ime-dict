@@ -1,0 +1,3 @@
+[tools]
+"go:google.golang.org/protobuf/cmd/protoc-gen-go" = "latest"
+protoc = "latest"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
-	"github.com/kyoh86/gobase/app"
+	"github.com/kyoh86/gimedic/app"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var (
 
 var facadeCommand = &cobra.Command{
 	Use:     app.Name,
-	Short:   "The template for go project",
+	Short:   "A tool to parse user dictionary for Google IME",
 	Version: fmt.Sprintf("%s-%s (%s)", version, commit, date),
 }
 

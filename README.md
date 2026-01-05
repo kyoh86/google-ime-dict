@@ -1,25 +1,25 @@
-# gobase
+# gimedic
 
 A template of the go-app project
 
-[![PkgGoDev](https://pkg.go.dev/badge/kyoh86/gobase)](https://pkg.go.dev/kyoh86/gobase)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/gobase)](https://goreportcard.com/report/github.com/kyoh86/gobase)
-[![Release](https://github.com/kyoh86/gobase/workflows/Release/badge.svg)](https://github.com/kyoh86/gobase/releases)
+[![PkgGoDev](https://pkg.go.dev/badge/kyoh86/gimedic)](https://pkg.go.dev/kyoh86/gimedic)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/gimedic)](https://goreportcard.com/report/github.com/kyoh86/gimedic)
+[![Release](https://github.com/kyoh86/gimedic/workflows/Release/badge.svg)](https://github.com/kyoh86/gimedic/releases)
 
 ## Description
 
 ```console
-$ gobase man
+$ gimedic man
 ```
 
-`gobase` provides a template of the go-app project.
+`gimedic` provides a template of the go-app project.
 
 ## Install
 
 ### For Golang developers
 
 ```console
-$ go get github.com/kyoh86/gobase/cmd/gobase
+$ go get github.com/kyoh86/gimedic/cmd/gimedic
 ```
 
 ### Homebrew/Linuxbrew
@@ -27,26 +27,26 @@ $ go get github.com/kyoh86/gobase/cmd/gobase
 ```console
 $ brew tap kyoh86/tap
 $ brew update
-$ brew install kyoh86/tap/gobase
+$ brew install kyoh86/tap/gimedic
 ```
 
 ### Makepkg
 
 ```console
-$ mkdir -p gobase_build && \
-  cd gobase_build && \
-  curl -iL --fail --silent https://github.com/kyoh86/gobase/releases/latest/download/gobase_PKGBUILD.tar.gz | tar -xvz
+$ mkdir -p gimedic_build && \
+  cd gimedic_build && \
+  curl -iL --fail --silent https://github.com/kyoh86/gimedic/releases/latest/download/gimedic_PKGBUILD.tar.gz | tar -xvz
 $ makepkg -i
 ```
 
 ## Available commands
 
-Use `gobase [command] --help` for more information about a command.
-Or see the manual in [usage/gobase.md](./usage/gobase.md).
+Use `gimedic [command] --help` for more information about a command.
+Or see the manual in [usage/gimedic.md](./usage/gimedic.md).
 
 ## Commands
 
-Manual: [usage/gobase.md](./usage/gobase.md).
+Manual: [usage/gimedic.md](./usage/gimedic.md).
 
 # LICENSE
 

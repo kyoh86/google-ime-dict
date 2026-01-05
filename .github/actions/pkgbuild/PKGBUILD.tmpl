@@ -29,7 +29,7 @@ build() {
     -modcacherw \
     -ldflags="${LDF}" \
     -o build ./cmd/...
-  go run -ldflags="${LDF}" -tags man ./cmd/gobase man
+  go run -ldflags="${LDF}" -tags man ./cmd/gimedic man
 }
 check() {
   cd "$pkgname-$pkgver" || exit 1
