@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/kyoh86/gimedic"
 	"github.com/spf13/cobra"
@@ -24,12 +25,26 @@ var decodeCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		var dict gimedic.UserDictionary
-		if err := proto.Unmarshal(raw, &dict); err != nil {
+		var storage gimedic.UserDictionaryStorage
+		if err := proto.Unmarshal(raw, &storage); err != nil {
 			return err
 		}
 
-		fmt.Printf("%#v\n", &dict)
+		fmt.Printf("version: %d\n", storage.GetVersion())
+		for _, dict := range storage.GetDictionaries() {
+			fmt.Printf("\n[%s] id=%d\n", dict.GetName(), dict.GetId())
+			for _, entry := range dict.GetEntries() {
+				pos := gimedic.Part(entry.GetPos()).String()
+				comment := strings.ReplaceAll(entry.GetComment(), "\n", " ")
+				fmt.Printf("%s\t%s\t%s\t%s\t%s\n",
+					entry.GetKey(),
+					entry.GetValue(),
+					pos,
+					comment,
+					entry.GetLocale(),
+				)
+			}
+		}
 
 		return nil
 	},
