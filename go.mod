@@ -186,7 +186,7 @@ require (
 	github.com/sigstore/cosign v1.13.1 // indirect
 	github.com/sigstore/rekor v1.0.1 // indirect
 	github.com/sigstore/sigstore v1.5.2 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/sirupsen/logrus v1.9.1 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/slack-go/slack v0.12.1 // indirect
 	github.com/spf13/afero v1.9.4 // indirect
