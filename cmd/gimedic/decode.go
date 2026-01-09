@@ -14,9 +14,13 @@ import (
 var decodeCommand = &cobra.Command{
 	Use:   "decode",
 	Short: "Decode a dictionary to human-readable",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		file, err := os.Open(args[0])
+		path, err := resolvePath(cmd, args)
+		if err != nil {
+			return err
+		}
+		file, err := os.Open(path)
 		if err != nil {
 			return err
 		}
@@ -51,5 +55,6 @@ var decodeCommand = &cobra.Command{
 }
 
 func init() {
+	decodeCommand.Flags().String("path", "", "Path to user_dictionary.db (overrides auto-detect)")
 	facadeCommand.AddCommand(decodeCommand)
 }

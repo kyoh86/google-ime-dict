@@ -16,17 +16,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var mergeCommand = &cobra.Command{
-	Use:   "merge <from.db> <to.db>",
-	Short: "Merge entries from one dictionary file into another",
-	Args:  cobra.ExactArgs(2),
+var ingestCommand = &cobra.Command{
+	Use:   "ingest <from.db> [to.db]",
+	Short: "Ingest entries from one dictionary file into another",
+	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		outPath, err := cmd.Flags().GetString("out")
 		if err != nil {
 			return err
 		}
 		fromPath := args[0]
-		toPath := args[1]
+		toPath, err := resolvePath(cmd, args[1:])
+		if err != nil {
+			return err
+		}
 		if outPath == "" {
 			outPath = toPath
 		}
@@ -54,8 +57,9 @@ var mergeCommand = &cobra.Command{
 }
 
 func init() {
-	mergeCommand.Flags().String("out", "", "Output path (default: overwrite target with .bak)")
-	facadeCommand.AddCommand(mergeCommand)
+	ingestCommand.Flags().String("out", "", "Output path (default: overwrite target with .bak)")
+	ingestCommand.Flags().String("path", "", "Target user_dictionary.db path (overrides auto-detect)")
+	facadeCommand.AddCommand(ingestCommand)
 }
 
 func loadStorage(path string) (*gimedic.UserDictionaryStorage, error) {
@@ -286,4 +290,21 @@ func randomUint64() uint64 {
 		return 0
 	}
 	return binary.LittleEndian.Uint64(b[:])
+}
+
+func resolvePath(cmd *cobra.Command, args []string) (string, error) {
+	if len(args) > 0 && args[0] != "" {
+		return args[0], nil
+	}
+	if flagPath, err := cmd.Flags().GetString("path"); err == nil && flagPath != "" {
+		return flagPath, nil
+	}
+	path, candidates, err := gimedic.FindUserDictionaryPath()
+	if err == nil {
+		return path, nil
+	}
+	if len(candidates) == 0 {
+		return "", fmt.Errorf("%w; provide --path", err)
+	}
+	return "", fmt.Errorf("%w; tried: %s (use --path to override)", err, strings.Join(candidates, ", "))
 }
