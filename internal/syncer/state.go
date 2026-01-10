@@ -1,4 +1,4 @@
-package main
+package syncer
 
 import (
 	"crypto/sha256"
@@ -10,7 +10,7 @@ import (
 	"runtime"
 )
 
-type journalEvent struct {
+type JournalEvent struct {
 	Timestamp string `json:"ts,omitempty"`
 	Op        string `json:"op"`
 	Dict      string `json:"dict"`
@@ -21,7 +21,7 @@ type journalEvent struct {
 	Locale    string `json:"locale,omitempty"`
 }
 
-type entryState struct {
+type EntryState struct {
 	Key     string `json:"key"`
 	Value   string `json:"value"`
 	Comment string `json:"comment,omitempty"`
@@ -29,35 +29,35 @@ type entryState struct {
 	Pos     int32  `json:"pos"`
 }
 
-type snapshot struct {
-	Dictionaries map[string]map[string]entryState `json:"dictionaries"`
+type Snapshot struct {
+	Dictionaries map[string]map[string]EntryState `json:"dictionaries"`
 }
 
-type syncState struct {
+type SyncState struct {
 	JournalOffset int64    `json:"journal_offset"`
-	Snapshot      snapshot `json:"snapshot"`
+	Snapshot      Snapshot `json:"snapshot"`
 }
 
 type dbState struct {
 	InhibitUntil string `json:"inhibit_until,omitempty"`
 }
 
-func loadSyncState(path string) (syncState, error) {
+func LoadSyncState(path string) (SyncState, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return syncState{Snapshot: snapshot{Dictionaries: map[string]map[string]entryState{}}}, nil
+			return SyncState{Snapshot: Snapshot{Dictionaries: map[string]map[string]EntryState{}}}, nil
 		}
-		return syncState{}, err
+		return SyncState{}, err
 	}
-	var state syncState
+	var state SyncState
 	if err := json.Unmarshal(data, &state); err != nil {
-		return syncState{}, err
+		return SyncState{}, err
 	}
 	return state, nil
 }
 
-func saveSyncState(path string, state syncState) error {
+func SaveSyncState(path string, state SyncState) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func saveSyncState(path string, state syncState) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-func syncStatePath(dbPath, journalPath string) (string, error) {
+func SyncStatePath(dbPath, journalPath string) (string, error) {
 	dir, err := stateDir()
 	if err != nil {
 		return "", err

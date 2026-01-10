@@ -1,15 +1,15 @@
-package main
+package syncer
 
 import "github.com/kyoh86/gimedic"
 
-func snapshotFromStorage(storage *gimedic.UserDictionaryStorage) snapshot {
-	result := snapshot{Dictionaries: map[string]map[string]entryState{}}
+func SnapshotFromStorage(storage *gimedic.UserDictionaryStorage) Snapshot {
+	result := Snapshot{Dictionaries: map[string]map[string]EntryState{}}
 	for _, dict := range storage.GetDictionaries() {
 		name := dict.GetName()
 		if name == "" {
 			name = "default"
 		}
-		entries := map[string]entryState{}
+		entries := map[string]EntryState{}
 		for _, entry := range dict.GetEntries() {
 			state := entryStateFromProto(entry)
 			entries[state.Key+"\u0000"+state.Value] = state
@@ -19,8 +19,8 @@ func snapshotFromStorage(storage *gimedic.UserDictionaryStorage) snapshot {
 	return result
 }
 
-func entryStateFromProto(entry *gimedic.UserDictionary_Entry) entryState {
-	return entryState{
+func entryStateFromProto(entry *gimedic.UserDictionary_Entry) EntryState {
+	return EntryState{
 		Key:     entry.GetKey(),
 		Value:   entry.GetValue(),
 		Comment: entry.GetComment(),
@@ -29,7 +29,7 @@ func entryStateFromProto(entry *gimedic.UserDictionary_Entry) entryState {
 	}
 }
 
-func entryStateEqual(a, b entryState) bool {
+func entryStateEqual(a, b EntryState) bool {
 	return a.Key == b.Key &&
 		a.Value == b.Value &&
 		a.Comment == b.Comment &&
@@ -37,19 +37,19 @@ func entryStateEqual(a, b entryState) bool {
 		a.Pos == b.Pos
 }
 
-func refreshOwnSnapshot(dbPath, journalPath string) error {
-	statePath, err := syncStatePath(dbPath, journalPath)
+func RefreshOwnSnapshot(dbPath, journalPath string) error {
+	statePath, err := SyncStatePath(dbPath, journalPath)
 	if err != nil {
 		return err
 	}
-	state, err := loadSyncState(statePath)
+	state, err := LoadSyncState(statePath)
 	if err != nil {
 		return err
 	}
-	storage, err := loadStorage(dbPath)
+	storage, err := LoadStorage(dbPath)
 	if err != nil {
 		return err
 	}
-	state.Snapshot = snapshotFromStorage(storage)
-	return saveSyncState(statePath, state)
+	state.Snapshot = SnapshotFromStorage(storage)
+	return SaveSyncState(statePath, state)
 }

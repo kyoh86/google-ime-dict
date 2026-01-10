@@ -3,8 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"crypto/rand"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/kyoh86/gimedic"
+	"github.com/kyoh86/gimedic/internal/syncer"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/proto"
 )
@@ -33,11 +32,11 @@ var ingestCommand = &cobra.Command{
 		if outPath == "" {
 			outPath = toPath
 		}
-		fromStorage, err := loadStorage(fromPath)
+		fromStorage, err := syncer.LoadStorage(fromPath)
 		if err != nil {
 			return err
 		}
-		toStorage, err := loadStorage(toPath)
+		toStorage, err := syncer.LoadStorage(toPath)
 		if err != nil {
 			return err
 		}
@@ -52,7 +51,7 @@ var ingestCommand = &cobra.Command{
 				return err
 			}
 		}
-		return writeStorage(outPath, toStorage)
+		return syncer.WriteStorage(outPath, toStorage)
 	},
 }
 
@@ -60,26 +59,6 @@ func init() {
 	ingestCommand.Flags().String("out", "", "Output path (default: overwrite target with .bak)")
 	ingestCommand.Flags().String("path", "", "Target user_dictionary.db path (overrides auto-detect)")
 	facadeCommand.AddCommand(ingestCommand)
-}
-
-func loadStorage(path string) (*gimedic.UserDictionaryStorage, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var storage gimedic.UserDictionaryStorage
-	if err := proto.Unmarshal(raw, &storage); err != nil {
-		return nil, err
-	}
-	return &storage, nil
-}
-
-func writeStorage(path string, storage *gimedic.UserDictionaryStorage) error {
-	raw, err := proto.Marshal(storage)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, raw, 0o644)
 }
 
 func backupFile(src, dst string) error {
@@ -128,7 +107,7 @@ func applyMerge(out io.Writer, in *bufio.Reader, fromStorage, toStorage *gimedic
 			}
 			if ok {
 				newDict := proto.Clone(fromDict).(*gimedic.UserDictionary)
-				newID := uniqueDictionaryID(toStorage)
+				newID := syncer.UniqueDictionaryID(toStorage)
 				newDict.Id = &newID
 				toStorage.Dictionaries = append(toStorage.Dictionaries, newDict)
 				toDicts[name] = newDict
@@ -266,30 +245,6 @@ func formatEntry(entry *gimedic.UserDictionary_Entry) string {
 		fmt.Fprintf(&buf, "\t%s\t%s", comment, locale)
 	}
 	return buf.String()
-}
-
-func uniqueDictionaryID(storage *gimedic.UserDictionaryStorage) uint64 {
-	used := map[uint64]struct{}{}
-	for _, d := range storage.GetDictionaries() {
-		used[d.GetId()] = struct{}{}
-	}
-	for {
-		id := randomUint64()
-		if id == 0 {
-			continue
-		}
-		if _, ok := used[id]; !ok {
-			return id
-		}
-	}
-}
-
-func randomUint64() uint64 {
-	var b [8]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return 0
-	}
-	return binary.LittleEndian.Uint64(b[:])
 }
 
 func resolvePath(cmd *cobra.Command, args []string) (string, error) {

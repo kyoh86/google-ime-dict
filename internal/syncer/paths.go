@@ -1,4 +1,4 @@
-package main
+package syncer
 
 import (
 	"errors"
@@ -7,13 +7,18 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/spf13/cobra"
 )
 
 var journalSafePattern = regexp.MustCompile(`[^a-zA-Z0-9._-]+`)
 
-func defaultJournalDir() (string, error) {
+var (
+	getHostname    = os.Hostname
+	getCurrentUser = user.Current
+	getEnv         = os.Getenv
+)
+
+// DefaultJournalDir returns the default journal directory.
+func DefaultJournalDir() (string, error) {
 	dir, err := stateDir()
 	if err != nil {
 		return "", err
@@ -21,17 +26,18 @@ func defaultJournalDir() (string, error) {
 	return filepath.Join(dir, "journals"), nil
 }
 
-func journalIdentity() string {
-	host, _ := os.Hostname()
+// JournalIdentity returns a stable identity for naming a journal file.
+func JournalIdentity() string {
+	host, _ := getHostname()
 	name := ""
-	if current, err := user.Current(); err == nil {
+	if current, err := getCurrentUser(); err == nil {
 		name = current.Username
 	}
 	if name == "" {
-		name = os.Getenv("USERNAME")
+		name = getEnv("USERNAME")
 	}
 	if name == "" {
-		name = os.Getenv("USER")
+		name = getEnv("USER")
 	}
 	host = journalSafePattern.ReplaceAllString(host, "_")
 	name = journalSafePattern.ReplaceAllString(name, "_")
@@ -49,37 +55,41 @@ func journalIdentity() string {
 	return host + "-" + name
 }
 
-func ownJournalFileName() string {
-	return journalIdentity() + ".jsonl"
+// OwnJournalFileName returns the expected journal file name for this host/user.
+func OwnJournalFileName() string {
+	return JournalIdentity() + ".jsonl"
 }
 
-func ownJournalPath(cmd *cobra.Command) (string, error) {
-	dir, err := journalDir(cmd)
+// OwnJournalPath returns the full path for the local journal file.
+func OwnJournalPath(journalDir string) (string, error) {
+	dir, err := resolveJournalDir(journalDir)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, ownJournalFileName()), nil
+	return filepath.Join(dir, OwnJournalFileName()), nil
 }
 
-func resolveJournalPath(cmd *cobra.Command, args []string) (string, error) {
-	if len(args) > 0 && args[0] != "" {
-		return args[0], nil
+// ResolveJournalPath resolves the journal path with optional override.
+func ResolveJournalPath(journalDir, arg string) (string, error) {
+	if arg != "" {
+		return arg, nil
 	}
-	dir, err := journalDir(cmd)
+	dir, err := resolveJournalDir(journalDir)
 	if err != nil {
 		return "", err
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, ownJournalFileName()), nil
+	return filepath.Join(dir, OwnJournalFileName()), nil
 }
 
-func resolveJournalPaths(cmd *cobra.Command, args []string) ([]string, error) {
+// ResolveJournalPaths resolves journal paths, filtering the local journal.
+func ResolveJournalPaths(journalDir string, args []string) ([]string, error) {
 	if len(args) > 0 {
 		return filterSelfJournals(args), nil
 	}
-	dir, err := journalDir(cmd)
+	dir, err := resolveJournalDir(journalDir)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +114,7 @@ func resolveJournalPaths(cmd *cobra.Command, args []string) ([]string, error) {
 }
 
 func filterSelfJournals(paths []string) []string {
-	own := ownJournalFileName()
+	own := OwnJournalFileName()
 	filtered := make([]string, 0, len(paths))
 	for _, path := range paths {
 		if filepath.Base(path) == own {
@@ -115,11 +125,9 @@ func filterSelfJournals(paths []string) []string {
 	return filtered
 }
 
-func journalDir(cmd *cobra.Command) (string, error) {
-	if cmd != nil {
-		if flagDir, err := cmd.Flags().GetString("journal-dir"); err == nil && flagDir != "" {
-			return flagDir, nil
-		}
+func resolveJournalDir(journalDir string) (string, error) {
+	if journalDir != "" {
+		return journalDir, nil
 	}
-	return defaultJournalDir()
+	return DefaultJournalDir()
 }

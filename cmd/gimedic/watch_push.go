@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/kyoh86/gimedic/internal/syncer"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,11 @@ var watchPushCommand = &cobra.Command{
 	Short: "Continuously append local changes to a shared journal",
 	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		journalPath, err := resolveJournalPath(cmd, args)
+		journalDir, err := cmd.Flags().GetString("journal-dir")
+		if err != nil {
+			return err
+		}
+		journalPath, err := syncer.ResolveJournalPath(journalDir, firstArg(args))
 		if err != nil {
 			return err
 		}

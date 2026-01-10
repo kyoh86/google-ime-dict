@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/kyoh86/gimedic/internal/syncer"
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +18,18 @@ var watchPullCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		journalPaths, err := resolveJournalPaths(cmd, args)
+		journalDir, err := cmd.Flags().GetString("journal-dir")
+		if err != nil {
+			return err
+		}
+		journalPaths, err := syncer.ResolveJournalPaths(journalDir, args)
 		if err != nil {
 			return err
 		}
 		if len(journalPaths) == 0 && len(args) > 0 {
 			return errors.New("no journal files found")
 		}
-		selfJournalPath, err := ownJournalPath(cmd)
+		selfJournalPath, err := syncer.OwnJournalPath(journalDir)
 		if err != nil {
 			return err
 		}
@@ -56,7 +61,7 @@ var watchPullCommand = &cobra.Command{
 			case <-ticker.C:
 				paths := journalPaths
 				if len(args) == 0 {
-					paths, err = resolveJournalPaths(cmd, args)
+					paths, err = syncer.ResolveJournalPaths(journalDir, args)
 					if err != nil {
 						return err
 					}

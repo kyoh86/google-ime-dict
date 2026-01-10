@@ -1,8 +1,8 @@
-package main
+package syncer
 
 import "time"
 
-func shouldInhibit(dbPath string) (bool, error) {
+func ShouldInhibit(dbPath string) (bool, error) {
 	statePath, err := dbStatePath(dbPath)
 	if err != nil {
 		return false, err
@@ -21,7 +21,7 @@ func shouldInhibit(dbPath string) (bool, error) {
 	return time.Now().Before(until), nil
 }
 
-func setInhibit(dbPath string, duration time.Duration) error {
+func SetInhibit(dbPath string, duration time.Duration) error {
 	statePath, err := dbStatePath(dbPath)
 	if err != nil {
 		return err
