@@ -13,19 +13,26 @@ import (
 )
 
 var pullCommand = &cobra.Command{
-	Use:   "pull <journal.jsonl...>",
+	Use:   "pull [journal.jsonl...]",
 	Short: "Apply shared journal entries to local dictionary",
-	Args:  cobra.MinimumNArgs(1),
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dbPath, err := resolvePath(cmd, nil)
 		if err != nil {
 			return err
 		}
+		journalPaths, err := resolveJournalPaths(cmd, args)
+		if err != nil {
+			return err
+		}
+		if len(journalPaths) == 0 {
+			return errors.New("no journal files found")
+		}
 		inhibitSeconds, err := cmd.Flags().GetInt("inhibit-seconds")
 		if err != nil {
 			return err
 		}
-		applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+		applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
 		if err != nil {
 			return err
 		}
@@ -38,6 +45,7 @@ var pullCommand = &cobra.Command{
 
 func init() {
 	pullCommand.Flags().String("path", "", "Local user_dictionary.db path (overrides auto-detect)")
+	pullCommand.Flags().String("journal-dir", "", "Directory for journal files (overrides default)")
 	pullCommand.Flags().Int("inhibit-seconds", 2, "Seconds to inhibit push after applying changes")
 	facadeCommand.AddCommand(pullCommand)
 }

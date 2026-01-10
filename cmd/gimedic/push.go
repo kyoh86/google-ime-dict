@@ -12,12 +12,15 @@ import (
 )
 
 var pushCommand = &cobra.Command{
-	Use:   "push <journal.jsonl> [from.db]",
+	Use:   "push [journal.jsonl]",
 	Short: "Append local changes to a shared journal",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		journalPath := args[0]
-		dbPath, err := resolvePath(cmd, args[1:])
+		journalPath, err := resolveJournalPath(cmd, args)
+		if err != nil {
+			return err
+		}
+		dbPath, err := resolvePath(cmd, nil)
 		if err != nil {
 			return err
 		}
@@ -34,6 +37,7 @@ var pushCommand = &cobra.Command{
 
 func init() {
 	pushCommand.Flags().String("path", "", "Local user_dictionary.db path (overrides auto-detect)")
+	pushCommand.Flags().String("journal-dir", "", "Directory for journal files (overrides default)")
 	facadeCommand.AddCommand(pushCommand)
 }
 

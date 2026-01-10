@@ -8,12 +8,15 @@ import (
 )
 
 var watchPushCommand = &cobra.Command{
-	Use:   "watch-push <journal.jsonl> [from.db]",
+	Use:   "watch-push [journal.jsonl]",
 	Short: "Continuously append local changes to a shared journal",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		journalPath := args[0]
-		dbPath, err := resolvePath(cmd, args[1:])
+		journalPath, err := resolveJournalPath(cmd, args)
+		if err != nil {
+			return err
+		}
+		dbPath, err := resolvePath(cmd, nil)
 		if err != nil {
 			return err
 		}
@@ -50,6 +53,7 @@ var watchPushCommand = &cobra.Command{
 
 func init() {
 	watchPushCommand.Flags().String("path", "", "Local user_dictionary.db path (overrides auto-detect)")
+	watchPushCommand.Flags().String("journal-dir", "", "Directory for journal files (overrides default)")
 	watchPushCommand.Flags().Int("interval-seconds", 5, "Polling interval in seconds")
 	facadeCommand.AddCommand(watchPushCommand)
 }

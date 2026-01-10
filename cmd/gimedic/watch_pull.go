@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"time"
 
 	"github.com/apex/log"
@@ -8,13 +9,20 @@ import (
 )
 
 var watchPullCommand = &cobra.Command{
-	Use:   "watch-pull <journal.jsonl...>",
+	Use:   "watch-pull [journal.jsonl...]",
 	Short: "Continuously apply shared journal entries to local dictionary",
-	Args:  cobra.MinimumNArgs(1),
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dbPath, err := resolvePath(cmd, nil)
 		if err != nil {
 			return err
+		}
+		journalPaths, err := resolveJournalPaths(cmd, args)
+		if err != nil {
+			return err
+		}
+		if len(journalPaths) == 0 {
+			return errors.New("no journal files found")
 		}
 		intervalSeconds, err := cmd.Flags().GetInt("interval-seconds")
 		if err != nil {
@@ -28,7 +36,7 @@ var watchPullCommand = &cobra.Command{
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
 
-		applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+		applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
 		if err != nil {
 			return err
 		}
@@ -40,7 +48,7 @@ var watchPullCommand = &cobra.Command{
 			case <-cmd.Context().Done():
 				return nil
 			case <-ticker.C:
-				applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+				applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
 				if err != nil {
 					return err
 				}
@@ -54,6 +62,7 @@ var watchPullCommand = &cobra.Command{
 
 func init() {
 	watchPullCommand.Flags().String("path", "", "Local user_dictionary.db path (overrides auto-detect)")
+	watchPullCommand.Flags().String("journal-dir", "", "Directory for journal files (overrides default)")
 	watchPullCommand.Flags().Int("interval-seconds", 5, "Polling interval in seconds")
 	watchPullCommand.Flags().Int("inhibit-seconds", 2, "Seconds to inhibit push after applying changes")
 	facadeCommand.AddCommand(watchPullCommand)
