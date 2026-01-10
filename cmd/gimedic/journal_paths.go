@@ -53,6 +53,14 @@ func ownJournalFileName() string {
 	return journalIdentity() + ".jsonl"
 }
 
+func ownJournalPath(cmd *cobra.Command) (string, error) {
+	dir, err := journalDir(cmd)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, ownJournalFileName()), nil
+}
+
 func resolveJournalPath(cmd *cobra.Command, args []string) (string, error) {
 	if len(args) > 0 && args[0] != "" {
 		return args[0], nil

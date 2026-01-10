@@ -32,7 +32,11 @@ var pullCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
+		selfJournalPath, err := ownJournalPath(cmd)
+		if err != nil {
+			return err
+		}
+		applied, err := pullOnce(dbPath, journalPaths, selfJournalPath, time.Duration(inhibitSeconds)*time.Second)
 		if err != nil {
 			return err
 		}
@@ -50,7 +54,7 @@ func init() {
 	facadeCommand.AddCommand(pullCommand)
 }
 
-func pullOnce(dbPath string, journalPaths []string, inhibitDuration time.Duration) (int, error) {
+func pullOnce(dbPath string, journalPaths []string, selfJournalPath string, inhibitDuration time.Duration) (int, error) {
 	appliedTotal := 0
 	for _, journalPath := range journalPaths {
 		statePath, err := syncStatePath(dbPath, journalPath)
@@ -83,6 +87,9 @@ func pullOnce(dbPath string, journalPaths []string, inhibitDuration time.Duratio
 		if err := saveSyncState(statePath, state); err != nil {
 			return 0, err
 		}
+	}
+	if err := refreshOwnSnapshot(dbPath, selfJournalPath); err != nil {
+		return appliedTotal, err
 	}
 	return appliedTotal, nil
 }

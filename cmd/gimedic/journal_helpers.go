@@ -36,3 +36,20 @@ func entryStateEqual(a, b entryState) bool {
 		a.Locale == b.Locale &&
 		a.Pos == b.Pos
 }
+
+func refreshOwnSnapshot(dbPath, journalPath string) error {
+	statePath, err := syncStatePath(dbPath, journalPath)
+	if err != nil {
+		return err
+	}
+	state, err := loadSyncState(statePath)
+	if err != nil {
+		return err
+	}
+	storage, err := loadStorage(dbPath)
+	if err != nil {
+		return err
+	}
+	state.Snapshot = snapshotFromStorage(storage)
+	return saveSyncState(statePath, state)
+}

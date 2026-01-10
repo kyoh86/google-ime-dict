@@ -21,8 +21,12 @@ var watchPullCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if len(journalPaths) == 0 {
+		if len(journalPaths) == 0 && len(args) > 0 {
 			return errors.New("no journal files found")
+		}
+		selfJournalPath, err := ownJournalPath(cmd)
+		if err != nil {
+			return err
 		}
 		intervalSeconds, err := cmd.Flags().GetInt("interval-seconds")
 		if err != nil {
@@ -36,19 +40,31 @@ var watchPullCommand = &cobra.Command{
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
 
-		applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
-		if err != nil {
-			return err
-		}
-		if applied > 0 {
-			log.Infof("watch-pull: applied %d events", applied)
+		if len(journalPaths) > 0 {
+			applied, err := pullOnce(dbPath, journalPaths, selfJournalPath, time.Duration(inhibitSeconds)*time.Second)
+			if err != nil {
+				return err
+			}
+			if applied > 0 {
+				log.Infof("watch-pull: applied %d events", applied)
+			}
 		}
 		for {
 			select {
 			case <-cmd.Context().Done():
 				return nil
 			case <-ticker.C:
-				applied, err := pullOnce(dbPath, journalPaths, time.Duration(inhibitSeconds)*time.Second)
+				paths := journalPaths
+				if len(args) == 0 {
+					paths, err = resolveJournalPaths(cmd, args)
+					if err != nil {
+						return err
+					}
+					if len(paths) == 0 {
+						continue
+					}
+				}
+				applied, err := pullOnce(dbPath, paths, selfJournalPath, time.Duration(inhibitSeconds)*time.Second)
 				if err != nil {
 					return err
 				}

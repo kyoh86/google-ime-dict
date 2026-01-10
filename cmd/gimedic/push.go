@@ -56,12 +56,7 @@ func pushOnce(dbPath, journalPath string) (int, error) {
 		return 0, err
 	}
 	if inhibited {
-		storage, err := loadStorage(dbPath)
-		if err != nil {
-			return 0, err
-		}
-		state.Snapshot = snapshotFromStorage(storage)
-		return 0, saveSyncState(statePath, state)
+		return 0, nil
 	}
 
 	storage, err := loadStorage(dbPath)
