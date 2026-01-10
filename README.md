@@ -1,6 +1,6 @@
 # gimedic
 
-A template of the go-app project
+CLI tools for parsing and syncing Google IME user dictionaries.
 
 [![PkgGoDev](https://pkg.go.dev/badge/kyoh86/gimedic)](https://pkg.go.dev/kyoh86/gimedic)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/gimedic)](https://goreportcard.com/report/github.com/kyoh86/gimedic)
@@ -12,7 +12,7 @@ A template of the go-app project
 $ gimedic man
 ```
 
-`gimedic` provides a template of the go-app project.
+`gimedic` provides tools to read and synchronize Google IME user dictionaries.
 
 ## Install
 

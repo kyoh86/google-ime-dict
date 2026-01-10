@@ -1,2 +1,2 @@
-// Package gimedic is the template for go project
+// Package gimedic provides tools to read and synchronize Google IME user dictionaries.
 package gimedic
