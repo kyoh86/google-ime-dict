@@ -54,7 +54,16 @@ Manual: [usage/gimedic.md](./usage/gimedic.md).
 By default, journals live under the OS state directory (no extra flags required). Use
 `--journal-dir` only when you want a shared location (e.g., Google Drive).
 
-Basic usage:
+Quick start (recommended):
+
+```console
+$ gimedic schedule --interval 5m --journal-dir "/path/to/shared/journals"
+$ gimedic activate --interval 5m --journal-dir "/path/to/shared/journals"
+```
+
+Note: `--journal-dir` is optional. If you omit it, `gimedic` uses the default per-OS state directory.
+
+Manual usage:
 
 ```console
 $ gimedic push
@@ -68,10 +77,10 @@ $ gimedic push --journal-dir "/path/to/shared/journals"
 $ gimedic pull --journal-dir "/path/to/shared/journals"
 ```
 
-## Scheduled Sync Templates
+## Scheduled Sync Templates (Manual)
 
 The simplest cross-OS approach is to schedule `push`/`pull` every few minutes with the OS
-scheduler. `--journal-dir` is optional; omit it to use the default per-OS location.
+scheduler. **`--journal-dir` is optional**; omit it to use the default per-OS location.
 
 ### macOS (launchd)
 
