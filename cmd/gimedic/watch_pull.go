@@ -22,16 +22,16 @@ var watchPullCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		journalPaths, err := syncer.ResolveJournalPaths(journalDir, args)
+		service := syncer.Service{
+			DBPath:     dbPath,
+			JournalDir: journalDir,
+		}
+		journalPaths, err := service.ResolveJournalPaths(args)
 		if err != nil {
 			return err
 		}
 		if len(journalPaths) == 0 && len(args) > 0 {
 			return errors.New("no journal files found")
-		}
-		selfJournalPath, err := syncer.OwnJournalPath(journalDir)
-		if err != nil {
-			return err
 		}
 		intervalSeconds, err := cmd.Flags().GetInt("interval-seconds")
 		if err != nil {
@@ -46,7 +46,8 @@ var watchPullCommand = &cobra.Command{
 		defer ticker.Stop()
 
 		if len(journalPaths) > 0 {
-			applied, err := pullOnce(dbPath, journalPaths, selfJournalPath, time.Duration(inhibitSeconds)*time.Second)
+			service.InhibitDuration = time.Duration(inhibitSeconds) * time.Second
+			applied, err := service.Pull(journalPaths)
 			if err != nil {
 				return err
 			}
@@ -61,7 +62,7 @@ var watchPullCommand = &cobra.Command{
 			case <-ticker.C:
 				paths := journalPaths
 				if len(args) == 0 {
-					paths, err = syncer.ResolveJournalPaths(journalDir, args)
+					paths, err = service.ResolveJournalPaths(args)
 					if err != nil {
 						return err
 					}
@@ -69,7 +70,7 @@ var watchPullCommand = &cobra.Command{
 						continue
 					}
 				}
-				applied, err := pullOnce(dbPath, paths, selfJournalPath, time.Duration(inhibitSeconds)*time.Second)
+				applied, err := service.Pull(paths)
 				if err != nil {
 					return err
 				}

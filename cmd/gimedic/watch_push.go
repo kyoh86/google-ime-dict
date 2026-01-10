@@ -13,15 +13,11 @@ var watchPushCommand = &cobra.Command{
 	Short: "Continuously append local changes to a shared journal",
 	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		journalDir, err := cmd.Flags().GetString("journal-dir")
-		if err != nil {
-			return err
-		}
-		journalPath, err := syncer.ResolveJournalPath(journalDir, firstArg(args))
-		if err != nil {
-			return err
-		}
 		dbPath, err := resolvePath(cmd, nil)
+		if err != nil {
+			return err
+		}
+		journalDir, err := cmd.Flags().GetString("journal-dir")
 		if err != nil {
 			return err
 		}
@@ -32,7 +28,16 @@ var watchPushCommand = &cobra.Command{
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
 
-		wrote, err := pushOnce(dbPath, journalPath)
+		service := syncer.Service{
+			DBPath:     dbPath,
+			JournalDir: journalDir,
+		}
+		journalPath, err := service.ResolveJournalPath(firstArg(args))
+		if err != nil {
+			return err
+		}
+
+		wrote, err := service.Push(journalPath)
 		if err != nil {
 			return err
 		}
@@ -44,7 +49,7 @@ var watchPushCommand = &cobra.Command{
 			case <-cmd.Context().Done():
 				return nil
 			case <-ticker.C:
-				wrote, err := pushOnce(dbPath, journalPath)
+				wrote, err := service.Push(journalPath)
 				if err != nil {
 					return err
 				}
