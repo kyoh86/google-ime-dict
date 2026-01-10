@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -27,16 +28,24 @@ var watchPullCommand = &cobra.Command{
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
 
-		if err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second); err != nil {
+		applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+		if err != nil {
 			return err
+		}
+		if applied > 0 {
+			log.Infof("watch-pull: applied %d events", applied)
 		}
 		for {
 			select {
 			case <-cmd.Context().Done():
 				return nil
 			case <-ticker.C:
-				if err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second); err != nil {
+				applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+				if err != nil {
 					return err
+				}
+				if applied > 0 {
+					log.Infof("watch-pull: applied %d events", applied)
 				}
 			}
 		}

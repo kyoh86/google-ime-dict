@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -23,16 +24,24 @@ var watchPushCommand = &cobra.Command{
 		ticker := time.NewTicker(time.Duration(intervalSeconds) * time.Second)
 		defer ticker.Stop()
 
-		if err := pushOnce(dbPath, journalPath); err != nil {
+		wrote, err := pushOnce(dbPath, journalPath)
+		if err != nil {
 			return err
+		}
+		if wrote > 0 {
+			log.Infof("watch-push: wrote %d events to %s", wrote, journalPath)
 		}
 		for {
 			select {
 			case <-cmd.Context().Done():
 				return nil
 			case <-ticker.C:
-				if err := pushOnce(dbPath, journalPath); err != nil {
+				wrote, err := pushOnce(dbPath, journalPath)
+				if err != nil {
 					return err
+				}
+				if wrote > 0 {
+					log.Infof("watch-push: wrote %d events to %s", wrote, journalPath)
 				}
 			}
 		}

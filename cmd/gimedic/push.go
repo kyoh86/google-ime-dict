@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,14 @@ var pushCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return pushOnce(dbPath, journalPath)
+		wrote, err := pushOnce(dbPath, journalPath)
+		if err != nil {
+			return err
+		}
+		if wrote > 0 {
+			log.Infof("push: wrote %d events to %s", wrote, journalPath)
+		}
+		return nil
 	},
 }
 
@@ -29,44 +37,47 @@ func init() {
 	facadeCommand.AddCommand(pushCommand)
 }
 
-func pushOnce(dbPath, journalPath string) error {
+func pushOnce(dbPath, journalPath string) (int, error) {
 	statePath, err := syncStatePath(dbPath, journalPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	state, err := loadSyncState(statePath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	inhibited, err := shouldInhibit(dbPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if inhibited {
 		storage, err := loadStorage(dbPath)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		state.Snapshot = snapshotFromStorage(storage)
-		return saveSyncState(statePath, state)
+		return 0, saveSyncState(statePath, state)
 	}
 
 	storage, err := loadStorage(dbPath)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	current := snapshotFromStorage(storage)
 	localEvents := diffSnapshots(state.Snapshot, current)
 	if len(localEvents) > 0 {
 		if err := appendJournalEvents(journalPath, localEvents); err != nil {
-			return err
+			return 0, err
 		}
 	}
 
 	state.Snapshot = current
-	return saveSyncState(statePath, state)
+	if err := saveSyncState(statePath, state); err != nil {
+		return 0, err
+	}
+	return len(localEvents), nil
 }
 
 func appendJournalEvents(path string, events []journalEvent) error {

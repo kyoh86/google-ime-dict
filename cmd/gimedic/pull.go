@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/kyoh86/gimedic"
 	"github.com/spf13/cobra"
 )
@@ -24,7 +25,14 @@ var pullCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+		applied, err := pullOnce(dbPath, args, time.Duration(inhibitSeconds)*time.Second)
+		if err != nil {
+			return err
+		}
+		if applied > 0 {
+			log.Infof("pull: applied %d events", applied)
+		}
+		return nil
 	},
 }
 
@@ -34,61 +42,64 @@ func init() {
 	facadeCommand.AddCommand(pullCommand)
 }
 
-func pullOnce(dbPath string, journalPaths []string, inhibitDuration time.Duration) error {
+func pullOnce(dbPath string, journalPaths []string, inhibitDuration time.Duration) (int, error) {
+	appliedTotal := 0
 	for _, journalPath := range journalPaths {
 		statePath, err := syncStatePath(dbPath, journalPath)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		state, err := loadSyncState(statePath)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
-		changed, newOffset, err := applyJournal(dbPath, journalPath, state.JournalOffset)
+		applied, changed, newOffset, err := applyJournal(dbPath, journalPath, state.JournalOffset)
 		if err != nil {
-			return err
+			return 0, err
 		}
+		appliedTotal += applied
 
 		if changed {
 			if err := setInhibit(dbPath, inhibitDuration); err != nil {
-				return err
+				return 0, err
 			}
 		}
 
 		storage, err := loadStorage(dbPath)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		state.Snapshot = snapshotFromStorage(storage)
 		state.JournalOffset = newOffset
 		if err := saveSyncState(statePath, state); err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return nil
+	return appliedTotal, nil
 }
 
-func applyJournal(dbPath, journalPath string, offset int64) (bool, int64, error) {
+func applyJournal(dbPath, journalPath string, offset int64) (int, bool, int64, error) {
 	file, err := os.Open(journalPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return false, offset, nil
+			return 0, false, offset, nil
 		}
-		return false, offset, err
+		return 0, false, offset, err
 	}
 	defer file.Close()
 
 	if _, err := file.Seek(offset, 0); err != nil {
-		return false, offset, err
+		return 0, false, offset, err
 	}
 
 	reader := bufio.NewScanner(file)
 	changed := false
+	applied := 0
 
 	storage, err := loadStorage(dbPath)
 	if err != nil {
-		return false, offset, err
+		return 0, false, offset, err
 	}
 	for reader.Scan() {
 		line := reader.Bytes()
@@ -97,25 +108,26 @@ func applyJournal(dbPath, journalPath string, offset int64) (bool, int64, error)
 		}
 		var event journalEvent
 		if err := json.Unmarshal(line, &event); err != nil {
-			return false, offset, err
+			return 0, false, offset, err
 		}
 		if applyEvent(storage, event) {
 			changed = true
+			applied++
 		}
 	}
 	if err := reader.Err(); err != nil {
-		return false, offset, err
+		return 0, false, offset, err
 	}
 	if changed {
 		if err := writeStorage(dbPath, storage); err != nil {
-			return false, offset, err
+			return 0, false, offset, err
 		}
 	}
 	newOffset, err := journalSize(journalPath)
 	if err != nil {
-		return changed, offset, err
+		return applied, changed, offset, err
 	}
-	return changed, newOffset, nil
+	return applied, changed, newOffset, nil
 }
 
 func journalSize(path string) (int64, error) {
