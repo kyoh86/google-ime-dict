@@ -22,10 +22,9 @@ func ensureDictionary(storage *gimedic.UserDictionaryStorage, name string) *gime
 }
 
 func deleteEntry(dict *gimedic.UserDictionary, key string) bool {
-	entries := dict.GetEntries()
-	for i, entry := range entries {
+	for i, entry := range dict.GetEntries() {
 		if entry.GetKey()+"\u0000"+entry.GetValue() == key {
-			dict.Entries = append(entries[:i], entries[i+1:]...)
+			dict.Entries = append(dict.Entries[:i], dict.Entries[i+1:]...)
 			return true
 		}
 	}

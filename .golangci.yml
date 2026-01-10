@@ -14,6 +14,31 @@ linters:
     - unparam
     - whitespace
   settings:
+    depguard:
+      rules:
+        Main:
+          files:
+            - "$all"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/apex/log
+            - github.com/apex/log/handlers/cli
+            - github.com/kyoh86/gimedic/app
+            - github.com/kyoh86/gimedic/internal/scheduler
+            - github.com/kyoh86/gimedic/internal/syncer
+            - github.com/kyoh86/gimedic
+            - github.com/spf13/cobra
+            - google.golang.org/protobuf/proto
+        Tests:
+          files:
+            - "$test"
+          allow:
+            - $gostd
+            - github.com/kyoh86/gimedic
+            - github.com/kyoh86/gimedic/internal/syncer
+            - github.com/spf13/cobra
+            - google.golang.org/protobuf/proto
     gocritic:
       disabled-checks:
         - elseif
