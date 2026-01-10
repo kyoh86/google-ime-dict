@@ -61,6 +61,13 @@ $ gimedic schedule --interval 5m --journal-dir "/path/to/shared/journals"
 $ gimedic activate --interval 5m --journal-dir "/path/to/shared/journals"
 ```
 
+If you installed `gimedic` into a non-standard location, pass `--exec`:
+
+```console
+$ gimedic schedule --exec "/path/to/gimedic" --interval 5m
+$ gimedic activate --exec "/path/to/gimedic" --interval 5m
+```
+
 Note: `--journal-dir` is optional. If you omit it, `gimedic` uses the default per-OS state directory.
 
 Manual usage:

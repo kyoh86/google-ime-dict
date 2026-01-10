@@ -115,7 +115,7 @@ Description=%s
 [Service]
 Type=oneshot
 ExecStart=%s
-`, description, strings.Join(args, " "))
+`, description, systemdArgs(args))
 }
 
 func systemdTimer(description, onBoot, onActive string) string {
@@ -153,4 +153,28 @@ func windowsArgs(args []string) string {
 		escaped = append(escaped, `"`+arg+`"`)
 	}
 	return strings.Join(escaped, " ")
+}
+
+func systemdArgs(args []string) string {
+	escaped := make([]string, 0, len(args))
+	for _, arg := range args {
+		escaped = append(escaped, systemdEscape(arg))
+	}
+	return strings.Join(escaped, " ")
+}
+
+func systemdEscape(arg string) string {
+	if arg == "" {
+		return `""`
+	}
+	if strings.ContainsAny(arg, " \t\n\"\\") {
+		replacer := strings.NewReplacer(
+			"\\", "\\\\",
+			`"`, `\"`,
+			"\n", `\n`,
+			"\t", `\t`,
+		)
+		return `"` + replacer.Replace(arg) + `"`
+	}
+	return arg
 }

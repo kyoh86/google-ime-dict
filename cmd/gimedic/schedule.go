@@ -29,9 +29,15 @@ var scheduleCommand = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		execPath, err := os.Executable()
-		if err != nil || execPath == "" {
-			execPath = "gimedic"
+		execPath, err := cmd.Flags().GetString("exec")
+		if err != nil {
+			return err
+		}
+		if execPath == "" {
+			execPath, err = os.Executable()
+			if err != nil || execPath == "" {
+				execPath = "gimedic"
+			}
 		}
 
 		plan := scheduler.DefaultPlan(execPath, interval)
@@ -73,6 +79,7 @@ func init() {
 	scheduleCommand.Flags().Duration("interval", 5*time.Minute, "Sync interval")
 	scheduleCommand.Flags().String("journal-dir", "", "Shared journal directory (optional)")
 	scheduleCommand.Flags().String("path", "", "Local user_dictionary.db path (optional)")
+	scheduleCommand.Flags().String("exec", "", "Executable path for scheduled jobs (optional)")
 	facadeCommand.AddCommand(scheduleCommand)
 }
 
